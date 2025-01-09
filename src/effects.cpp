@@ -43,6 +43,8 @@
 #include "effects/strip/laserline.h"
 #include "effects/strip/misceffects.h"
 #include "effects/matrix/PatternClock.h"       // No matrix dependencies
+#include "effects/strip/Carnival.h"
+#include "effects/strip/Crawl.h"
 
 #if ENABLE_AUDIO
     #include "effects/matrix/spectrumeffects.h"    // Musis spectrum effects
@@ -480,7 +482,11 @@ void LoadEffectFactories()
     #elif LEDSTRIP
 
         ADD_EFFECT(EFFECT_STRIP_STATUS, StatusEffect, CRGB::White);
-
+ 
+    #elif CARNIVAL
+        ADD_EFFECT(EFFECT_STRIP_CARNIVAL,CarnivalEffect);
+    #elif CRAWL
+        ADD_EFFECT(EFFECT_STRIP_CRAWL);
     #else
 
         ADD_EFFECT(EFFECT_STRIP_RAINBOW_FILL, RainbowFillEffect, 6, 2);                    // Simple effect if not otherwise defined above
