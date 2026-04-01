@@ -485,6 +485,8 @@ void LoadEffectFactories()
  
     #elif CARNIVAL
         ADD_EFFECT(EFFECT_STRIP_CARNIVAL,CarnivalEffect);
+    #elif PALETTE_EFX
+        ADD_EFFECT(EFFECT_STRIP_PALETTE,PaletteEffect);
     #elif CRAWL
         ADD_EFFECT(EFFECT_STRIP_CRAWL);
     #else

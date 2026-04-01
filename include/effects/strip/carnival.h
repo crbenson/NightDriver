@@ -1,4 +1,4 @@
-// crawl effect, will just light one pixel at a time advancing one place each cycle
+// carnival colors display
 #pragma once
 
 #include <sys/types.h>
@@ -72,58 +72,32 @@ class CarnivalEffect: public LEDStripEffect
         static uint16_t loop_no  = 0;
         lastms = millis();
         
-        ClearFrameOnAllChannels();
-        switch( loop_no){
-        case 0 :
-        assert(0);
-            for(i = 0; i <144 - 3; i+= 3)
+        // ClearFrameOnAllChannels();
+        for(i = 0; i < 143; i+= 3)
+        {
+            switch( loop_no){
+            case 0:
             {
                 setPixelsOnAllChannels(i,1,CRGB::Green,false);
                 setPixelsOnAllChannels(i+1,1,CRGB::Gold,false);
                 setPixelsOnAllChannels(i+2,1,CRGB::Purple,false);
             }
-/*          for (uint16_t i = 0;i < 8 ;i++) // 6 pixels * 3 colors * 8 groups = 144 LEDS
+            break;
+            case 1:
             {
-                setPixelsOnAllChannels(i*18,6,CRGB::Green,false);
-                setPixelsOnAllChannels(((i*18)+6),6,CRGB::Gold,false);
-                setPixelsOnAllChannels(((i*18)+12),6,CRGB::Violet,false);
-                //cout<<"Case Zero";
-            }*/
-        break;
-        case 1:
-            for(i = 0; i < (144 - 2); i+= 3)
-            {
-                setPixelsOnAllChannels(i,1,CRGB::Gold,false);
                 setPixelsOnAllChannels(i+1,1,CRGB::Purple,false);
                 setPixelsOnAllChannels(i+2,1,CRGB::Green,false);
+                setPixelsOnAllChannels(i,1,CRGB::Gold,false);
             }
-/*   
-           /*     for (uint16_t i = 0;i < 8 ;i++) // 6 pixels * 3 colors * 8 groups = 144 LEDS
-            {
-                setPixelsOnAllChannels(i*18,6,CRGB::Violet,false);
-                setPixelsOnAllChannels(((i*18)+6),6,CRGB::Green,false);
-                setPixelsOnAllChannels(((i*18)+12),6,CRGB::Gold,false);
-                //cout << "Case One";
-            }*/
-        break;
+            break;
             case 2:
-            for(i = 0; i <144 - 3; i+= 3)
             {
-
+                setPixelsOnAllChannels(i+2,1,CRGB::Gold,false);
                 setPixelsOnAllChannels(i,1,CRGB::Purple,false);
                 setPixelsOnAllChannels(i+1,1,CRGB::Green,false);
-                setPixelsOnAllChannels(i+2,1,CRGB::Gold,false);
             }
-  
-          /*  for (uint16_t i = 0;i < 8 ;i++) // 6 pixels * 3 colors * 8 groups = 144 LEDS
-            {
-                setPixelsOnAllChannels(((i*18)),6,CRGB::Gold,false);
-                setPixelsOnAllChannels(((i*18)+6),6,CRGB::Violet,false);
-                setPixelsOnAllChannels(i*18+12,6,CRGB::Green,false);
-                //cout << "Case Two";
- 
-            }*/
-        break;
+            break;
+            }
         }
         loop_no ++;
         if (loop_no > 2)
