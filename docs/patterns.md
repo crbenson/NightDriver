@@ -1,3 +1,8 @@
+---
+title: Pattern guide
+layout: default
+---
+
 # Pattern guide
 
 The Pattern Lab is a browser-based simulator for NightDriver effects. It runs entirely on your machine — nothing is uploaded. Use it to explore a design, then export it as JSON or as a C++ starting point for the firmware.

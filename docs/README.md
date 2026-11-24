@@ -1,3 +1,8 @@
+---
+title: NightDriver documentation site
+layout: default
+---
+
 # NightDriver documentation site
 
 This folder is a self-contained, static documentation site for the [NightDriver repository](https://github.com/crbenson/NightDriver). It is designed to publish through GitHub Pages and requires no build step, package install, or server-side code.
