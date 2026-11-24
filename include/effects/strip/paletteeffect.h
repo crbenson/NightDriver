@@ -50,7 +50,23 @@ class PaletteEffect : public LEDStripEffect
 
   public:
 
-    PaletteEffect(const CRGBPalette16 & palette,
+PaletteEffect()
+      : LEDStripEffect(EFFECT_STRIP_PALETTE, "Palette Effect"),
+        _startIndex(0.0f),
+        _paletteIndex(0.0f),
+        _palette(),
+        _density(1.0f),
+        _paletteSpeed(1.0f),
+        _lightSize(1.0f),
+        _gapSize(1.0f),
+        _LEDSPerSecond(0.0f),
+        _blend(LINEARBLEND),
+        _bErase(true),
+        _brightness(1.0f)
+    {
+    }
+
+  PaletteEffect(const CRGBPalette16 & palette,
                   float density = 1.0,
                   float paletteSpeed = 1,
                   float ledsPerSecond = 0,
