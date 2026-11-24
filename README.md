@@ -10,7 +10,7 @@
 <!-- markdownlint-disable-next-line MD036 /no-emphasis-as-heading -->
 _Davepl, 9/19/2021_
 
-- Explore the [interactive Pattern Lab and documentation](https://crbenson.github.io/NightDriver/) — generate and export new LED patterns in your browser.
+- Explore the [interactive Pattern Lab and documentation](https://crbenson.github.io/NightDriver/) — generate new LED patterns, download a ready-to-build kit, and read the build guide.
 - See [Discussions](http://github.com/PlummersSoftwareLLC/NightDriverStrip/discussions) for questions and comments.
 - See source code and [COPYING.txt](COPYING.txt) for detailed technical and licensing information including versions.
 

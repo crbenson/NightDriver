@@ -9,8 +9,9 @@ This folder is a self-contained, static documentation site for the [NightDriver 
 
 ## Pages
 
-- `index.html` — the home page and **Pattern Lab**: a live LED simulator with 10 effects, 8 palettes, strip/matrix/ring layouts, random pattern generation, a gallery, browser-local presets, and JSON/C++ export.
+- `index.html` — the home page and **Pattern Lab**: a live LED simulator with 10 effects, 8 palettes, strip/matrix/ring layouts, random pattern generation, a gallery, browser-local presets, JSON/C++ export, and a **Build Studio** that downloads a ready-to-use build kit.
 - `patterns.md` — reference guide for effects, palettes, parameters, export formats, and moving a design into firmware.
+- `build.md` — prerequisites, environment list, generated kit contents, build/flash commands, and troubleshooting.
 - `styles.css` — all styling.
 - `app.js` — all interaction and rendering. Uses only browser APIs (Canvas, localStorage, Clipboard).
 - `assets/NightDriverLogo-small.png` — logo copied from the repository's `assets/` folder so the site works when Pages serves only `/docs`.
@@ -31,6 +32,7 @@ The site will be available at `https://crbenson.github.io/NightDriver/`. To publ
 - **Generate** randomizes effect, palette, and animation parameters while keeping your layout. **Surprise me** also randomizes layout and LED count.
 - Generated designs are added to an in-memory gallery (last 12). Presets saved with **Save** go to `localStorage` under `nightdriver.patternlab.presets.v1`.
 - Export produces either a neutral JSON description or a C++ snippet using the repository's `PaletteEffect` constructor and `ADD_EFFECT` macro. The C++ output is a starting point, not a drop-in firmware build.
+- The Build Studio uses a small store-only ZIP writer (no JSZip dependency) to package the design, a generated effect header, a registration snippet, and environment-specific commands into a downloadable kit. Its environment list mirrors the `[env:…]` sections in `platformio.ini`; update `ENVIRONMENTS` in `app.js` when devices are added.
 
 ## Maintaining the site
 

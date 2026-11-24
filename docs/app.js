@@ -27,6 +27,45 @@ const PALETTES = {
   custom: null
 };
 
+// Build environments from platformio.ini (keep in sync with the firmware repo).
+const ENVIRONMENTS = [
+  ['demo', 'Simple WS2812B strip, rainbow on pin 5'],
+  ['m5demo', 'M5StickC Plus demo'],
+  ['m5plusdemo', 'M5StickC Plus with expanded features'],
+  ['carnival', 'Carnival strip project'],
+  ['palette', 'Palette effect demo (repository default)'],
+  ['heltecdemo', 'Heltec WiFi Kit demo'],
+  ['heltecv2demo', 'Heltec WiFi Kit v2 demo'],
+  ['heltecv3demo', 'Heltec WiFi Kit v3 demo'],
+  ['lilygo-tdisplay-s3-demo', 'LilyGo T-Display S3 demo'],
+  ['ledstrip', 'WiFi-controlled LED strip'],
+  ['ledstrip_feather', 'Feather-based LED strip'],
+  ['ledstrip_feather_hexagon', 'Feather hexagon matrix'],
+  ['ledstrip_feather_wrover', 'Feather WROVER LED strip'],
+  ['ledstriplite', 'Compact LED strip'],
+  ['ledstrip_pico', 'Raspberry Pi Pico LED strip'],
+  ['spectrum', 'M5StickC Plus 48×16 spectrum matrix'],
+  ['spectrum_elecrow', 'Elecrow spectrum variant'],
+  ['spectrumstack', 'Stacked spectrum variant'],
+  ['spectrumlite', 'Lite spectrum variant'],
+  ['spectrum_wrover_kit', 'WROVER spectrum kit'],
+  ['mesmerizer', 'HUB75 matrix info panel'],
+  ['mesmerizer_lolin', 'LilyGo Lolin HUB75 panel'],
+  ['laserline', 'Laser line effect device'],
+  ['lantern', 'Candle/lantern device'],
+  ['chieftain', 'Chieftain device'],
+  ['umbrella', 'Umbrella LED device'],
+  ['generic', 'Generic ESP32 configuration'],
+  ['panlee', 'Panlee board'],
+  ['ttgo', 'TTGO board'],
+  ['xmastrees', 'Christmas tree display'],
+  ['insulators', 'Insulator decorative display'],
+  ['magicmirror', 'Magic mirror display'],
+  ['atomlight', 'M5Atom light'],
+  ['fanset', 'Fan-based display'],
+  ['cube', 'LED cube']
+];
+
 const DEFAULT = {
   effect: 'palette', palette: 'sunset', colors: ['#ff2d95', '#ff6b35', '#ffd23f', '#4cc9f0'],
   layout: 'strip', cols: 16, rows: 16,
@@ -57,7 +96,10 @@ const el = {
   patternName: $('patternName'), patternDna: $('patternDna'), previewCanvas: $('previewCanvas'),
   fpsOut: $('fpsOut'), playBtn: $('playBtn'), galleryGrid: $('galleryGrid'),
   presetName: $('presetName'), presetSelect: $('presetSelect'),
-  codeOutput: $('codeOutput'), exportHint: $('exportHint'), toast: $('toast')
+  codeOutput: $('codeOutput'), exportHint: $('exportHint'), toast: $('toast'),
+  buildEnvSelect: $('buildEnvSelect'), envHint: $('envHint'), buildSummary: $('buildSummary'),
+  buildCommands: $('buildCommands'), downloadKitBtn: $('downloadKitBtn'),
+  copyBuildCmdBtn: $('copyBuildCmdBtn'), copyUploadCmdBtn: $('copyUploadCmdBtn')
 };
 
 /* ------------------------------------------------------------------ colors */
@@ -332,6 +374,11 @@ function bindControls() {
   $('loadPresetBtn').addEventListener('click', loadPreset);
   $('deletePresetBtn').addEventListener('click', deletePreset);
 
+  el.buildEnvSelect.addEventListener('change', () => { updateBuildPanel(); toast(`Build target: ${buildEnv()}`); });
+  el.downloadKitBtn.addEventListener('click', downloadBuildKit);
+  el.copyBuildCmdBtn.addEventListener('click', () => copyText(buildCommand(), 'Build command copied'));
+  el.copyUploadCmdBtn.addEventListener('click', () => copyText(uploadCommand(), 'Upload command copied'));
+
   document.addEventListener('keydown', (e) => {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
     if (e.code === 'Space') { e.preventDefault(); el.playBtn.click(); }
@@ -408,6 +455,218 @@ function renderGallery() {
   });
 }
 
+/* ------------------------------------------------------------------- build */
+
+function buildEnv() { return el.buildEnvSelect.value || 'demo'; }
+function buildCommand() { return `pio run -e ${buildEnv()}`; }
+function uploadCommand() { return `pio run -e ${buildEnv()} -t upload`; }
+function populateBuildEnvs() {
+  ENVIRONMENTS.forEach(([name, desc]) => el.buildEnvSelect.add(new Option(`${name} — ${desc}`, name)));
+  el.buildEnvSelect.value = 'palette';
+}
+function updateBuildPanel() {
+  if (!el.buildEnvSelect.options.length) populateBuildEnvs();
+  const env = buildEnv();
+  const desc = (ENVIRONMENTS.find((e) => e[0] === env) || [env, ''])[1];
+  el.envHint.textContent = desc;
+  el.buildSummary.innerHTML = `Target: <b>${env}</b><br>Pattern: <b>${escapeHtml(state.name)}</b><br>Effect: <b>${state.effect}</b> · Palette: <b>${state.palette}</b><br>Layout: <b>${state.layout}</b> · LEDs: <b>${state.ledCount}</b>`;
+  el.buildCommands.textContent = `# Install once (PlatformIO Core)
+python3 -m pip install --upgrade platformio
+
+# Build the selected environment
+${buildCommand()}
+
+# Upload to a connected ESP32
+${uploadCommand()}
+
+# Build every environment (slow)
+pio run
+
+# Serial monitor
+pio device monitor -e ${env}`;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* --- minimal store-only ZIP writer (no external libraries) --- */
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (const b of bytes) c = CRC_TABLE[(c ^ b) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const localParts = [], centralParts = [];
+  let offset = 0;
+  for (const file of files) {
+    const name = enc.encode(file.name);
+    const data = typeof file.data === 'string' ? enc.encode(file.data) : file.data;
+    const crc = crc32(data);
+    const local = new Uint8Array(30 + name.length), lv = new DataView(local.buffer);
+    lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0, true);
+    lv.setUint16(8, 0, true); lv.setUint16(10, 0, true); lv.setUint16(12, 0, true);
+    lv.setUint32(14, crc, true); lv.setUint32(18, data.length, true); lv.setUint32(22, data.length, true);
+    lv.setUint16(26, name.length, true); lv.setUint16(28, 0, true);
+    local.set(name, 30);
+    const cd = new Uint8Array(46 + name.length), cv = new DataView(cd.buffer);
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0, true); cv.setUint16(10, 0, true); cv.setUint16(12, 0, true); cv.setUint16(14, 0, true);
+    cv.setUint32(16, crc, true); cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true);
+    cv.setUint16(28, name.length, true); cv.setUint16(30, 0, true); cv.setUint16(32, 0, true);
+    cv.setUint16(34, 0, true); cv.setUint16(36, 0, true); cv.setUint32(38, 0, true); cv.setUint32(42, offset, true);
+    cd.set(name, 46);
+    localParts.push(local, data); centralParts.push(cd);
+    offset += local.length + data.length;
+  }
+  const cdSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+  const eocd = new Uint8Array(22), ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true); ev.setUint16(4, 0, true); ev.setUint16(6, 0, true);
+  ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true); ev.setUint16(20, 0, true);
+  return new Blob([...localParts, ...centralParts, eocd], { type: 'application/zip' });
+}
+
+function generatedHeader(cfg) {
+  const colors = paletteRgb(cfg.palette, cfg.colors);
+  const stops = Array.from({ length: 16 }, (_, i) => {
+    const [r, g, b] = colorAt(colors, i / 15).map(Math.round);
+    return `    CRGB(0x${r.toString(16).padStart(2, '0')}, 0x${g.toString(16).padStart(2, '0')}, 0x${b.toString(16).padStart(2, '0')})`;
+  }).join(',\n');
+  return `// "${cfg.name}" — generated by NightDriver Pattern Lab
+// Copy to: include/effects/strip/generated_pattern.h
+#pragma once
+
+#include "effects.h"
+
+static const CRGB generatedPalette[] = {
+${stops}
+};
+
+class GeneratedPatternEffect : public LEDStripEffect
+{
+    CRGBPalette16 _palette;
+    float _speed, _density, _brightness, _index;
+
+  public:
+    GeneratedPatternEffect()
+      : LEDStripEffect(EFFECT_STRIP_PALETTE, "Generated Pattern"),
+        _palette(generatedPalette),
+        _speed(${cfg.speed.toFixed(2)}f),
+        _density(${cfg.density.toFixed(2)}f),
+        _brightness(${cfg.brightness.toFixed(2)}f),
+        _index(0.0f)
+    {
+    }
+
+    void Draw() override
+    {
+        float dt = g_Values.AppTime.LastFrameTime();
+        _index = fmodf(_index + dt * _speed * 32.0f * _density, 256.0f);
+        for (int i = 0; i < _cLEDs; i++)
+        {
+            CRGB c = ColorFromPalette(_palette, fmodf(_index + i * _density, 256.0f),
+                                      255 * _brightness, LINEARBLEND);
+            setPixelsOnAllChannels(i, 1, c, false);
+        }
+    }
+};
+`;
+}
+
+function kitReadme(cfg, env) {
+  const desc = (ENVIRONMENTS.find((e) => e[0] === env) || [env, ''])[1];
+  return `# Build kit: ${cfg.name}
+
+Generated by the NightDriver Pattern Lab.
+
+- Target environment: \`${env}\` — ${desc}
+- Effect: ${cfg.effect} (palette ID ${EFFECTS.find((e) => e.id === cfg.effect).firmwareId ?? 'n/a'})
+- Palette: ${cfg.palette}
+- Layout: ${cfg.layout}, ${cfg.ledCount} LEDs
+
+## 1. Prerequisites
+
+- PlatformIO Core: https://docs.platformio.org/en/latest/core/installation/index.html
+- Node.js and npm (the web UI is compiled during the build): https://nodejs.org/
+- A supported ESP32 board and USB cable
+
+## 2. Get the firmware
+
+\`\`\`sh
+git clone https://github.com/crbenson/NightDriver.git
+cd NightDriver
+\`\`\`
+
+## 3. Add this pattern
+
+1. Copy \`custom_effect.h\` to \`include/effects/strip/generated_pattern.h\`.
+2. Add \`#include "effects/strip/generated_pattern.h"\` to \`src/effects.cpp\`.
+3. Add the lines from \`generated_effect.snippet.cpp\` inside \`LoadEffectFactories()\`.
+4. Set \`default_envs = ${env}\` in \`platformio.ini\` (or pass \`-e ${env}\` on the command line).
+
+The generated effect reuses the palette effect ID for a quick demo. For a permanent custom effect, add a new ID at the end of \`include/effects.h\` and use it in both the class constructor and registration.
+
+## 4. Build and flash
+
+\`\`\`sh
+${buildCommand()}
+${uploadCommand()}
+pio device monitor -e ${env}
+\`\`\`
+
+If you would rather not install a toolchain, use the web installer:
+https://plummerssoftwarellc.github.io/NightDriverStrip
+
+## Files in this kit
+
+- \`pattern.json\` — the design in a neutral format
+- \`custom_effect.h\` — a ready-to-add C++ effect class
+- \`generated_effect.snippet.cpp\` — effect registration snippet
+- \`build_commands.sh\` — the exact commands for this target
+- \`BUILD.md\` — this file
+`;
+}
+
+function downloadBuildKit() {
+  const cfg = { ...state, colors: [...state.colors] };
+  const env = buildEnv();
+  const slug = (cfg.name || 'pattern').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'pattern';
+  const files = [
+    { name: 'BUILD.md', data: kitReadme(cfg, env) },
+    { name: 'pattern.json', data: JSON.stringify(patternObject(cfg), null, 2) },
+    { name: 'custom_effect.h', data: generatedHeader(cfg) },
+    { name: 'generated_effect.snippet.cpp', data: cppSnippet(cfg) },
+    { name: 'build_commands.sh', data: `#!/bin/sh\n${buildCommand()}\n${uploadCommand()}\npio device monitor -e ${env}\n` }
+  ];
+  const blob = makeZip(files);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `nightdriver-${slug}-${env}.zip`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast(`Build kit downloaded for ${env}`);
+}
+
+async function copyText(text, message) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+  toast(message);
+}
+
 /* ------------------------------------------------------------------ export */
 
 function patternObject(cfg) {
@@ -458,6 +717,7 @@ function updateCode() {
   el.exportHint.textContent = activeTab === 'json'
     ? 'JSON presets describe the design in a firmware-neutral way.'
     : 'C++ uses the same PaletteEffect constructor pattern as src/effects.cpp.';
+  updateBuildPanel();
 }
 async function copyCode() {
   const text = el.codeOutput.textContent;
@@ -543,6 +803,7 @@ function animateHero() {
 /* -------------------------------------------------------------------- init */
 
 populateSelects();
+populateBuildEnvs();
 bindControls();
 syncControls();
 updateCode();

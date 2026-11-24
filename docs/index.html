@@ -19,6 +19,7 @@
     <nav aria-label="Main navigation">
       <a href="#lab">Pattern Lab</a>
       <a href="#gallery">Gallery</a>
+      <a href="#build">Build</a>
       <a href="patterns.md">Guide</a>
       <a class="nav-cta" href="https://github.com/crbenson/NightDriver" target="_blank" rel="noopener">GitHub ↗</a>
     </nav>
@@ -177,10 +178,50 @@
       </div>
     </section>
 
+    <section id="build" class="section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">From design to firmware</p>
+          <h2>Build Studio</h2>
+          <p class="section-intro">Choose your device, then download a build kit containing your pattern, a ready-to-add effect, and the exact PlatformIO commands. No guessing environment names.</p>
+        </div>
+        <a class="btn btn-ghost" href="build.md">Full build guide ↗</a>
+      </div>
+      <div class="card build-card">
+        <div class="build-grid">
+          <div class="build-form">
+            <label class="field">
+              <span>Device / build environment</span>
+              <select id="buildEnvSelect"></select>
+            </label>
+            <p class="hint" id="envHint"></p>
+            <div class="build-summary" id="buildSummary"></div>
+            <div class="build-actions">
+              <button type="button" id="downloadKitBtn" class="btn btn-primary">↓ Download build kit (.zip)</button>
+              <button type="button" id="copyBuildCmdBtn" class="btn btn-ghost">Copy build command</button>
+              <button type="button" id="copyUploadCmdBtn" class="btn btn-ghost">Copy upload command</button>
+              <a class="btn btn-ghost" href="https://plummerssoftwarellc.github.io/NightDriverStrip" target="_blank" rel="noopener">Web installer ↗</a>
+            </div>
+          </div>
+          <div class="build-steps">
+            <h3>What's in the kit</h3>
+            <ol class="steps">
+              <li><strong>Pick a device</strong> from the 35 environments defined in <code>platformio.ini</code>.</li>
+              <li><strong>Download the kit</strong> — it includes <code>pattern.json</code>, <code>custom_effect.h</code>, a C++ snippet, and <code>BUILD.md</code>.</li>
+              <li><strong>Copy two files</strong> into your NightDriver checkout and follow the generated commands.</li>
+              <li><strong>Build and upload</strong> with PlatformIO, or flash a prebuilt image with the web installer.</li>
+            </ol>
+            <pre id="buildCommands" class="code-output" aria-live="polite"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="docs" class="section docs-section">
       <div class="section-head"><div><p class="eyebrow">Documentation</p><h2>Go further</h2></div></div>
       <div class="doc-grid">
         <a class="doc-card" href="patterns.md"><span class="doc-icon">◈</span><h3>Pattern guide</h3><p>Every effect, palette, and parameter explained, with notes on mapping designs to firmware effects.</p><span class="doc-link">Read guide →</span></a>
+        <a class="doc-card" href="build.md"><span class="doc-icon">⬡</span><h3>Build guide</h3><p>Prerequisites, device environments, generated build kits, commands, and flashing instructions.</p><span class="doc-link">Read guide →</span></a>
         <a class="doc-card" href="README.md"><span class="doc-icon">⌘</span><h3>Site README</h3><p>How this documentation site is structured and how to publish it with GitHub Pages.</p><span class="doc-link">Read README →</span></a>
         <a class="doc-card" href="https://github.com/crbenson/NightDriver" target="_blank" rel="noopener"><span class="doc-icon">⌁</span><h3>Source code</h3><p>The firmware, device configurations, web installer, and effect implementations live in the repository.</p><span class="doc-link">Open GitHub ↗</span></a>
       </div>
