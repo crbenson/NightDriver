@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="NightDriver Pattern Lab — an interactive playground for designing LED strip and matrix patterns for ESP32-based NightDriver projects.">
+  <title>NightDriver — Pattern Lab</title>
+  <link rel="icon" href="assets/NightDriverLogo-small.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="NightDriver home">
+      <img src="assets/NightDriverLogo-small.png" alt="NightDriver logo">
+      <span>NightDriver <em>Pattern Lab</em></span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="#lab">Pattern Lab</a>
+      <a href="#gallery">Gallery</a>
+      <a href="patterns.md">Guide</a>
+      <a class="nav-cta" href="https://github.com/crbenson/NightDriver" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Interactive LED playground</p>
+        <h1>Design light.<br><span>Generate patterns.</span><br>Ship them to your strip.</h1>
+        <p class="lede">A live simulator for the NightDriver firmware. Tweak an effect, generate a new pattern, then export it as JSON or C++ to use on your ESP32.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#lab">Open Pattern Lab <span aria-hidden="true">↓</span></a>
+          <a class="btn btn-ghost" href="patterns.md">Read the pattern guide</a>
+        </div>
+        <dl class="hero-stats">
+          <div><dt>10</dt><dd>live effects</dd></div>
+          <div><dt>8</dt><dd>color palettes</dd></div>
+          <div><dt>0</dt><dd>installs required</dd></div>
+        </dl>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-device">
+          <div class="hero-strip" id="heroStrip"></div>
+          <div class="hero-label">WS2812B · 64 LEDs · 60 fps</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="lab" class="section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">The workbench</p>
+          <h2>Pattern Lab</h2>
+          <p class="section-intro">Everything updates live. Press <kbd>G</kbd> to generate a brand-new pattern, <kbd>Space</kbd> to pause, or <kbd>R</kbd> to shuffle colors.</p>
+        </div>
+        <div class="transport" role="group" aria-label="Playback and generation">
+          <button type="button" id="playBtn" class="btn btn-icon" title="Play / pause (Space)">⏸ Pause</button>
+          <button type="button" id="stepBtn" class="btn btn-ghost" title="Advance one frame">Step</button>
+          <button type="button" id="generateBtn" class="btn btn-primary">✦ Generate new pattern</button>
+          <button type="button" id="randomBtn" class="btn btn-ghost" title="Completely randomize (R)">Surprise me</button>
+          <button type="button" id="resetBtn" class="btn btn-ghost" title="Restore defaults">Reset</button>
+        </div>
+      </div>
+
+      <div class="lab-grid">
+        <div class="card controls-card">
+          <div class="card-head">
+            <h3>Controls</h3>
+            <span class="pill" id="effectIdPill">effect #21</span>
+          </div>
+
+          <label class="field">
+            <span>Effect</span>
+            <select id="effectSelect"></select>
+          </label>
+          <p class="hint" id="effectDescription"></p>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Layout</span>
+              <select id="layoutSelect">
+                <option value="strip">LED strip</option>
+                <option value="matrix">LED matrix</option>
+                <option value="ring">Ring</option>
+              </select>
+            </label>
+            <label class="field" id="matrixSizeField" hidden>
+              <span>Matrix</span>
+              <select id="matrixSizeSelect">
+                <option value="8,8">8 × 8</option>
+                <option value="16,16" selected>16 × 16</option>
+                <option value="32,16">32 × 16</option>
+              </select>
+            </label>
+          </div>
+
+          <fieldset class="field">
+            <legend>Palette</legend>
+            <select id="paletteSelect"></select>
+            <div class="swatches" id="paletteSwatches" aria-hidden="true"></div>
+            <div class="custom-colors" id="customColors" hidden>
+              <label>1 <input type="color" id="colorA" value="#ff2d95"></label>
+              <label>2 <input type="color" id="colorB" value="#ff6b35"></label>
+              <label>3 <input type="color" id="colorC" value="#ffd23f"></label>
+              <label>4 <input type="color" id="colorD" value="#4cc9f0"></label>
+            </div>
+          </fieldset>
+
+          <div class="sliders">
+            <label class="slider"><span>LED count <output id="ledCountOut">64</output></span><input type="range" id="ledCount" min="8" max="256" step="8" value="64"></label>
+            <label class="slider"><span>Speed <output id="speedOut">1.00×</output></span><input type="range" id="speed" min="0.1" max="4" step="0.05" value="1"></label>
+            <label class="slider"><span>Density <output id="densityOut">1.40</output></span><input type="range" id="density" min="0.2" max="6" step="0.05" value="1.4"></label>
+            <label class="slider"><span>Brightness <output id="brightnessOut">90%</output></span><input type="range" id="brightness" min="0.1" max="1" step="0.01" value="0.9"></label>
+            <label class="slider"><span>Gap <output id="gapOut">0.18</output></span><input type="range" id="gap" min="0" max="0.9" step="0.01" value="0.18"></label>
+            <label class="slider"><span>Glow <output id="glowOut">12</output></span><input type="range" id="glow" min="0" max="28" step="1" value="12"></label>
+            <label class="slider"><span>Trail <output id="trailOut">0.35</output></span><input type="range" id="trail" min="0" max="0.95" step="0.01" value="0.35"></label>
+          </div>
+        </div>
+
+        <div class="card preview-card">
+          <div class="card-head">
+            <h3>Live preview</h3>
+            <span class="pill pill-live"><i></i><span id="fpsOut">60 fps</span></span>
+          </div>
+          <div class="preview-stage">
+            <canvas id="previewCanvas" aria-label="Animated LED pattern preview"></canvas>
+          </div>
+          <div class="pattern-meta">
+            <label class="field pattern-name">
+              <span>Pattern name</span>
+              <input type="text" id="patternName" value="Solar Bloom" maxlength="48" spellcheck="false">
+            </label>
+            <div class="dna" id="patternDna"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gallery" class="section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Your collection</p>
+          <h2>Generated patterns</h2>
+          <p class="section-intro">Every generated pattern is captured here. Click a card to load it back into the lab, or download its configuration.</p>
+        </div>
+        <div class="preset-tools">
+          <input type="text" id="presetName" placeholder="Name this preset" maxlength="40" aria-label="Preset name">
+          <button type="button" id="savePresetBtn" class="btn btn-ghost">Save</button>
+          <select id="presetSelect" aria-label="Saved presets"><option value="">Saved presets…</option></select>
+          <button type="button" id="loadPresetBtn" class="btn btn-ghost">Load</button>
+          <button type="button" id="deletePresetBtn" class="btn btn-ghost" title="Delete selected preset">✕</button>
+        </div>
+      </div>
+      <div class="gallery-grid" id="galleryGrid"></div>
+    </section>
+
+    <section id="export" class="section">
+      <div class="card export-card">
+        <div class="card-head">
+          <div>
+            <p class="eyebrow">Take it with you</p>
+            <h3>Export your pattern</h3>
+          </div>
+          <div class="tabs" role="tablist" aria-label="Export format">
+            <button type="button" id="jsonTab" class="tab is-active" role="tab" aria-selected="true">JSON config</button>
+            <button type="button" id="cppTab" class="tab" role="tab" aria-selected="false">C++ snippet</button>
+          </div>
+        </div>
+        <pre id="codeOutput" class="code-output" aria-live="polite"></pre>
+        <div class="export-actions">
+          <button type="button" id="copyCodeBtn" class="btn btn-primary">Copy to clipboard</button>
+          <button type="button" id="downloadBtn" class="btn btn-ghost">Download .json</button>
+          <span class="hint" id="exportHint">JSON presets can be reloaded into the lab and mapped to firmware effects.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="docs" class="section docs-section">
+      <div class="section-head"><div><p class="eyebrow">Documentation</p><h2>Go further</h2></div></div>
+      <div class="doc-grid">
+        <a class="doc-card" href="patterns.md"><span class="doc-icon">◈</span><h3>Pattern guide</h3><p>Every effect, palette, and parameter explained, with notes on mapping designs to firmware effects.</p><span class="doc-link">Read guide →</span></a>
+        <a class="doc-card" href="README.md"><span class="doc-icon">⌘</span><h3>Site README</h3><p>How this documentation site is structured and how to publish it with GitHub Pages.</p><span class="doc-link">Read README →</span></a>
+        <a class="doc-card" href="https://github.com/crbenson/NightDriver" target="_blank" rel="noopener"><span class="doc-icon">⌁</span><h3>Source code</h3><p>The firmware, device configurations, web installer, and effect implementations live in the repository.</p><span class="doc-link">Open GitHub ↗</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>NightDriver Pattern Lab · a creative companion to the NightDriverStrip firmware.</p>
+    <p>Generated patterns run in your browser. Firmware is GPL-3.0 — see <a href="https://github.com/crbenson/NightDriver/blob/main/COPYING.txt" target="_blank" rel="noopener">COPYING.txt</a>.</p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
